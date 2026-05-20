@@ -18,32 +18,14 @@ public class CustomerDao {
 	@Autowired
 	SessionFactory factory;
 
-// insert data using hql query.
+// insert data 
 	public String insertData(CustomerEntity cs) {
 
 		Session s = factory.openSession();
 		Transaction tt = s.beginTransaction();
 
-		
-		MutationQuery q = s.createMutationQuery("insert into CustomerEntity(customerId,customerName,customerEmail,customerMobile,customerCity,customerState,customerCountry,customerAge,customerGender,customerBalance)values\r\n"
-				+ "(:id,:name,:email,:mobile,\r\n"
-				+ ":city,:state,:country,\r\n"
-				+ ":age,:gender,:balance)\"\r\n"
-				+ ");");
-  // The values we set we have to pass them here 
-		q.setParameter("id", cs.getCustomerId());
-		q.setParameter("name", cs.getCustomerName());
-		q.setParameter("email", cs.getCustomerEmail());
-		q.setParameter("mobile", cs.getCustomerMobile());
-		q.setParameter("city", cs.getCustomerCity());
-		q.setParameter("state", cs.getCustomerState());
-		q.setParameter("country", cs.getCustomerCountry());
-		q.setParameter("age", cs.getCustomerAge());
-		q.setParameter("gender", cs.getCustomerGender());
-		q.setParameter("balance", cs.getCustomerBalance());
-		
-		q.executeUpdate();
-		
+		s.persist(cs);
+
 		tt.commit();
 
 		s.close();
@@ -59,15 +41,16 @@ public class CustomerDao {
 		Session ss = factory.openSession();
 		Transaction tt = ss.beginTransaction();
 
-		MutationQuery mq = ss.createMutationQuery("delete from CustomerEntity where customerId=:id");
-		
-		mq.setParameter("id", id);
-		// why doing set parameter id
-		// because we have to pass the id which we want to delete and that id is coming from the controller and that id is coming from the user input.
-		//here id in double quotes is the parameter name and id in set parameter is the value which we want to pass to that parameter.
-// we are pasing the id to the parameter in the query.
-		mq.executeUpdate();
-		
+		// Store the id of the entity in the reference
+
+		// get is depricated so use find
+
+		CustomerEntity e = ss.find(CustomerEntity.class, id);
+
+		// we now soted the value of id in the customer entity
+
+		ss.remove(e);
+		// remove that object
 		tt.commit();
 		ss.close();
 
@@ -82,20 +65,23 @@ public class CustomerDao {
 		Session sd = factory.openSession();
 		Transaction tt = sd.beginTransaction();
 
-	    MutationQuery q = sd.createMutationQuery("update CustomerEntity set customerName=:name,customerEmail=:email,customerMobile=:mobile,customerCity=:city,customerState=:state,customerCountry=:country,customerAge=:age,customerGender=: gender, customerBalance=:balance where customerId=:id");
+		// fetch data and store in one entity
+		CustomerEntity c1 = sd.find(CustomerEntity.class, id);
+
+		// data fetched and stored in this object
 		
-		q.setParameter("name", cs.getCustomerName());
-		q.setParameter("email", cs.getCustomerEmail());
-		q.setParameter("mobile", cs.getCustomerMobile());
-		q.setParameter("city", cs.getCustomerCity());
-		q.setParameter("state", cs.getCustomerState());
-		q.setParameter("country", cs.getCustomerCountry());
-		q.setParameter("age", cs.getCustomerAge());
-		q.setParameter("gender", cs.getCustomerGender());
-		q.setParameter("balance", cs.getCustomerBalance());
-		
-		q.setParameter("id", id);
-		q.executeUpdate();
+		c1.setCustomerName(cs.getCustomerName());
+		c1.setCustomerEmail(cs.getCustomerEmail());
+		c1.setCustomerMobile(cs.getCustomerMobile());
+		c1.setCustomerCity(cs.getCustomerCity());
+		c1.setCustomerState(cs.getCustomerState());
+		c1.setCustomerCountry(cs.getCustomerCountry());
+		c1.setCustomerAge(cs.getCustomerAge());
+		c1.setCustomerGender(cs.getCustomerGender());
+		c1.setCustomerBalance(cs.getCustomerBalance());
+
+		sd.merge(c1); // the old data one
+
 		tt.commit();
 		sd.close();
 
@@ -111,11 +97,7 @@ public class CustomerDao {
 		Session s = factory.openSession();
 		Transaction tt = s.beginTransaction();
 		
-		Query sq = s.createQuery("from CustomerEntity where customerId=:id", CustomerEntity.class);
-		
-		sq.setParameter("id", id);
-	
-		CustomerEntity c = (CustomerEntity) sq.getSingleResult();
+		CustomerEntity c = s.find(CustomerEntity.class, id);
 		
 		tt.commit();
 		
@@ -131,10 +113,12 @@ public class CustomerDao {
 		
 		Session s = factory.openSession();
 		Transaction tt = s.beginTransaction();
+		// used createquerey here
+		// Using the get we can get the single record but for the all records we use the hql query.
+		Query<CustomerEntity> q = s.createQuery("from CustomerEntity", CustomerEntity.class);
 		
-		Query<CustomerEntity> sq = s.createQuery("from CustomerEntity", CustomerEntity.class);
+		List<CustomerEntity> list = q.list();
 		
-		List<CustomerEntity> list = sq.getResultList();
 	
 		tt.commit();
 		s.close();
